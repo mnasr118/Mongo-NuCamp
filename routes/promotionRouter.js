@@ -1,7 +1,7 @@
 const express = require("express");
 const promotionRouter = express.Router();
 const Promotion = require("../models/promotion");
-
+const authenticate = require("../authenticate");
 promotionRouter
 	.route("/")
 	.get((req, res, next) => {
@@ -13,7 +13,7 @@ promotionRouter
 			})
 			.catch((err) => next(err));
 	})
-	.post((req, res, next) => {
+	.post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
 		Promotion.create(req.body)
 			.then((promotion) => {
 				res.statusCode = 200;
@@ -22,19 +22,23 @@ promotionRouter
 			})
 			.catch((err) => next(err));
 	})
-	.put((req, res) => {
+	.put(authenticate.verifyUser, (req, res, next) => {
 		res.statusCode = 403;
 		res.end("PUT operation not supported on /promotion");
 	})
-	.delete((req, res, next) => {
-		Promotion.deleteMany()
-			.then((promotions) => {
-				res.statusCode = 200;
-				res.setHeader("Content-Type", "application/json");
-				res.json(promotions);
-			})
-			.catch((err) => next(err));
-	});
+	.delete(
+		authenticate.verifyUser,
+		authenticate.verifyAdmin,
+		(req, res, next) => {
+			Promotion.deleteMany()
+				.then((promotions) => {
+					res.statusCode = 200;
+					res.setHeader("Content-Type", "application/json");
+					res.json(promotions);
+				})
+				.catch((err) => next(err));
+		}
+	);
 
 promotionRouter
 	.route("/:promotionId")
@@ -48,13 +52,13 @@ promotionRouter
 			})
 			.catch((err) => next(err));
 	})
-	.post((req, res) => {
+	.post(authenticate.verifyUser, (req, res, next) => {
 		res.statusCode = 403;
 		res.end(
 			`Post operation not supported on /promotion/${req.params.promotionId}`
 		);
 	})
-	.put((req, res, next) => {
+	.put(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
 		Promotion.findByIdAndUpdate(
 			req.params.promotionId,
 			{ $set: req.body },
@@ -68,14 +72,18 @@ promotionRouter
 			.catch((err) => next(err));
 	})
 
-	.delete((req, res) => {
-		Promotion.findByIdAndDelete(req.params.promotionId)
-			.then((promotion) => {
-				res.statusCode = 200;
-				res.setHeader("Content-Type", "application/json");
-				res.json(promotion);
-			})
-			.catch((err) => next(err));
-	});
+	.delete(
+		authenticate.verifyUser,
+		authenticate.verifyAdmin,
+		(req, res, next) => {
+			Promotion.findByIdAndDelete(req.params.promotionId)
+				.then((promotion) => {
+					res.statusCode = 200;
+					res.setHeader("Content-Type", "application/json");
+					res.json(promotion);
+				})
+				.catch((err) => next(err));
+		}
+	);
 
 module.exports = promotionRouter;
